@@ -1,6 +1,7 @@
 import Ember from 'ember';
 import Configuration from '../configuration';
 import TokenAuthenticator from './token';
+import fetch from 'fetch';
 
 const assign = Ember.assign || Ember.merge;
 
@@ -297,24 +298,40 @@ export default TokenAuthenticator.extend({
     @private
   */
   makeRequest(url, data, headers) {
-    return Ember.$.ajax({
-      url: url,
-      method: 'POST',
-      data: JSON.stringify(data),
-      dataType: 'json',
-      contentType: 'application/json',
-      headers: this.headers,
-      beforeSend: (xhr, settings) => {
-        if(this.headers['Accept'] === null || this.headers['Accept'] === undefined) {
-          xhr.setRequestHeader('Accept', settings.accepts.json);
-        }
-
-        if (headers) {
-          Object.keys(headers).forEach((key) => {
-            xhr.setRequestHeader(key, headers[key]);
-          });
-        }
-      }
+    // return Ember.$.ajax({
+    //   url: url,
+    //   method: 'POST',
+    //   data: JSON.stringify(data),
+    //   dataType: 'json',
+    //   contentType: 'application/json',
+    //   headers: this.headers,
+    //   beforeSend: (xhr, settings) => {
+    //     if(this.headers['Accept'] === null || this.headers['Accept'] === undefined) {
+    //       xhr.setRequestHeader('Accept', settings.accepts.json);
+    //     }
+    //
+    //     if (headers) {
+    //       Object.keys(headers).forEach((key) => {
+    //         xhr.setRequestHeader(key, headers[key]);
+    //       });
+    //     }
+    //   }
+    // });
+    return new Ember.RSVP.Promise((resolve, reject) => {
+      headers = headers || {};
+      let option = {
+        method: 'POST',
+        headers: Ember.merge(headers, {
+          Accept: 'application/json',
+          'Content-type': 'application/json'
+        }),
+        body: JSON.stringify(data)
+      };
+      return fetch(url, option).then((response) => {
+        return response.json().then((data) => {
+          resolve(data);
+        });
+      }, reject);
     });
   },
 
