@@ -2,6 +2,7 @@ import Ember from 'ember';
 import Configuration from '../configuration';
 import TokenAuthenticator from './token';
 import fetch from 'fetch';
+import atob from 'npm:atob';
 
 const assign = Ember.assign || Ember.merge;
 
@@ -281,8 +282,39 @@ export default TokenAuthenticator.extend({
     @return {object} An object with properties for the session.
   */
   getTokenData(token) {
-    const payload = token.split('.')[1];
-    const tokenData = decodeURIComponent(window.escape(atob(payload)));
+    function b64DecodeUnicode(str) {
+      return decodeURIComponent(atob(str).replace(/(.)/g, function (m, p) {
+        var code = p.charCodeAt(0).toString(16).toUpperCase();
+        if (code.length < 2) {
+          code = '0' + code;
+        }
+        return '%' + code;
+      }));
+    }
+
+    function base64_url_decode(str){
+      var output = str.replace(/-/g, "+").replace(/_/g, "/");
+      switch (output.length % 4) {
+        case 0:
+          break;
+        case 2:
+          output += "==";
+          break;
+        case 3:
+          output += "=";
+          break;
+        default:
+          throw "Illegal base64url string!";
+      }
+
+      try{
+        return b64DecodeUnicode(output);
+      } catch (err) {
+        return atob(output);
+      }
+    }
+
+    const tokenData = base64_url_decode(token.split('.')[1]);
 
     try {
       return JSON.parse(tokenData);
@@ -298,25 +330,6 @@ export default TokenAuthenticator.extend({
     @private
   */
   makeRequest(url, data, headers) {
-    // return Ember.$.ajax({
-    //   url: url,
-    //   method: 'POST',
-    //   data: JSON.stringify(data),
-    //   dataType: 'json',
-    //   contentType: 'application/json',
-    //   headers: this.headers,
-    //   beforeSend: (xhr, settings) => {
-    //     if(this.headers['Accept'] === null || this.headers['Accept'] === undefined) {
-    //       xhr.setRequestHeader('Accept', settings.accepts.json);
-    //     }
-    //
-    //     if (headers) {
-    //       Object.keys(headers).forEach((key) => {
-    //         xhr.setRequestHeader(key, headers[key]);
-    //       });
-    //     }
-    //   }
-    // });
     return new Ember.RSVP.Promise((resolve, reject) => {
       headers = headers || {};
       let option = {

@@ -3,6 +3,7 @@ import JWTAuthenticator from 'ember-simple-auth-token/authenticators/jwt';
 import Authorizer from 'ember-simple-auth-token/authorizers/token';
 import Configuration from 'ember-simple-auth-token/configuration';
 import ENV from '../config/environment';
+import atob from 'npm:atob';
 
 /**
   Ember Simple Auth Token's Initializer.
